@@ -1,7 +1,7 @@
 ///
 /// Somewhat of a POC for writing Cimplefetch in Rust, against the whole
 /// purpose of Cimplefetch existing: to be written in C.
-/// 
+///
 /// Copyright (C) 2021  Avery Murray
 ///
 /// This program is free software: you can redistribute it and/or modify
@@ -17,9 +17,8 @@
 /// You should have received a copy of the GNU General Public License
 /// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ///
-
 use std::env;
-use std::process::{exit};
+use std::process::exit;
 
 use rfetch::*;
 use uname::uname;
@@ -32,13 +31,13 @@ fn main() {
     // Refrences suck sometimes, so drop them in directly. ;)
     let rfs: Rfetch = Rfetch::new(
         match uname() {
-                Ok(u) => u,
-                Err(e) => {
-                    eprintln!("{}: error: {}", program, e);
-                    exit(255);
-                }
-            },
-        User::new()
+            Ok(u) => u,
+            Err(e) => {
+                eprintln!("{}: error: {}", program, e);
+                exit(255);
+            }
+        },
+        User::new(),
     );
 
     if argc < 2 {
@@ -46,13 +45,19 @@ fn main() {
         return;
     }
 
-    for n in 1..argc {
-        let arg_chrs: Vec<char> = args[n].chars().collect();
+    for n in args.iter().take(argc).skip(1) {
+        let arg_chrs: Vec<char> = n.chars().collect();
 
         for c in arg_chrs {
             match c {
-                'A' => { rfs.print_all(); return }
-                'h' => { help(); return }
+                'A' => {
+                    rfs.print_all();
+                    return;
+                }
+                'h' => {
+                    help();
+                    return;
+                }
 
                 'a' => rfs.print_arch(),
                 'd' => rfs.print_desktop(),
