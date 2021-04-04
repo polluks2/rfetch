@@ -114,7 +114,7 @@ impl Rfetch {
         self.print_shell();
         self.print_desktop();
         self.print_session();
-        self.print_host();
+        self.print_home();
 
         drop(self);
     }
@@ -153,5 +153,3 @@ impl Default for User {
         Self::new()
     }
 }
-
-// use uname::Info as Uname
