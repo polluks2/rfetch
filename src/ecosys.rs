@@ -13,6 +13,10 @@ macro_rules! handle {
 	};
 }
 
+/// Ecos system 'Ecosystem' struct contains user's account and desktop
+/// information.
+/// All information is contained in `Option`, if information is unavailable
+/// the item is `None`.
 #[derive(Debug)]
 pub struct Ecos {
 	pub name: Option<String>,
@@ -24,6 +28,7 @@ pub struct Ecos {
 }
 
 impl Ecos {
+	/// Collects all information, unavailable infromation is `None`
 	pub fn get() -> Result<Self> {
 
 		let ecos = Self {
@@ -70,6 +75,8 @@ impl Ecos {
 	}
 }
 
+/// This function will read the `/etc/lsb-release` file on a Linux system and 
+/// parse to find the `DISTRIB_ID` item. Returns `Ok(DISTRIB_ID)` on success.
 fn read_distro() -> Result<String> {
 	let mut file: File = File::open("/etc/lsb-release")?;
 
@@ -90,10 +97,11 @@ fn read_distro() -> Result<String> {
 		}
 	}
 
-
-	errorhere("")
+	errorhere("failed to read distro")
 }
 
+/// This trait exists purely to change a String to have a capital first 
+/// letter using a method.
 trait Title {
     fn to_title(&mut self);
 }

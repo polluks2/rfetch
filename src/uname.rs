@@ -3,6 +3,7 @@ use std::io::Result;
 
 use crate::errorhere;
 
+/// Raw `utsname` struct from `/usr/include/sys/utsname.h` C header.
 #[repr(C)]
 #[derive(Copy, Clone)]
 struct utsname {
@@ -18,6 +19,7 @@ extern "C" {
     fn uname(__name: *mut utsname) -> c_int;
 }
 
+/// Safe implementation of `/usr/include/sys/utsname.h` header.
 pub struct Uname {
 	pub sysname: String,
 	pub nodename: String,
@@ -28,6 +30,8 @@ pub struct Uname {
 }
 
 impl Uname {
+	/// Collects and converts all available information from the utsname
+	/// struct from raw C to the safety of Rust.
 	pub fn get()-> Result<Self> {
 
 		let mut raw: utsname = utsname {
@@ -54,6 +58,7 @@ impl Uname {
 	}
 }
 
+/// The actual function which converts C char arrays into Rust `String`.
 fn fromraw(s: &[c_char; 65usize]) -> Result<String> {
 
 	match String::from_utf8(
