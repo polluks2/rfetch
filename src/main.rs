@@ -1,81 +1,137 @@
-///
-/// Somewhat of a POC for writing Cimplefetch in Rust, against the whole
-/// purpose of Cimplefetch existing: to be written in C.
-///
-/// Copyright (C) 2021  Avery Murray
-///
-/// This program is free software: you can redistribute it and/or modify
-/// it under the terms of the GNU General Public License as published by
-/// the Free Software Foundation, either version 3 of the License, or
-/// (at your option) any later version.
-///
-/// This program is distributed in the hope that it will be useful,
-/// but WITHOUT ANY WARRANTY; without even the implied warranty of
-/// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-/// GNU General Public License for more details.
-///
-/// You should have received a copy of the GNU General Public License
-/// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-///
-use std::env;
-use std::process::exit;
+mod ecosys;
+mod uname;
 
-use rfetch::*;
-use uname::uname;
+use std::io::{Result, Error, ErrorKind};
+use std::env::args;
 
-fn main() {
-    let args: Vec<String> = env::args().collect();
-    let argc: usize = args.len();
-    let program: &str = args[0].split('/').last().unwrap();
+use ecosys::Ecos;
+use uname::Uname;
 
-    // Refrences suck sometimes, so drop them in directly. ;)
-    let rfs: Rfetch = Rfetch::new(
-        match uname() {
-            Ok(u) => u,
-            Err(e) => {
-                eprintln!("{}: error: {}", program, e);
-                exit(255);
-            }
-        },
-        User::new(),
-    );
-
-    if argc < 2 {
-        rfs.print_default();
-        return;
-    }
-
-    for n in args.iter().take(argc).skip(1) {
-        let arg_chrs: Vec<char> = n.chars().collect();
-
-        for c in arg_chrs {
-            match c {
-                'A' => {
-                    rfs.print_all();
-                    return;
-                }
-                'h' => {
-                    help();
-                    return;
-                }
-
-                'a' => rfs.print_arch(),
-                'd' => rfs.print_desktop(),
-                'H' => rfs.print_home(),
-                'k' => rfs.print_kernel(),
-                'n' => rfs.print_host(),
-                'o' => rfs.print_os(),
-                's' => rfs.print_shell(),
-                'S' => rfs.print_session(),
-                't' => rfs.print_uptime(),
-                'T' => rfs.print_uptime(),
-                'u' => rfs.print_user(),
-                _ => (),
-            }
-        }
-    }
+struct Rfetch {
+	user: Ecos,
+	uname: Uname,
 }
 
-fn help() {
-    println!("Usage: rfecth")
+impl Rfetch {
+	pub fn create(user: Ecos, uname: Uname) -> Rfetch {
+		Self { user, uname }
+	}
+
+
+	pub fn run(self, args: &[String]) -> Result<()> {
+		let argc: usize = args.len();
+
+		if argc == 1 {
+			self.default();
+			return Ok(());
+		}
+
+		for arg in args.iter().skip(1) {
+			
+			let chargs: Vec<char> = arg.chars().collect();
+
+			for c in chargs {
+				match c {
+					'-' => (),
+					'A' => self.print_all(),
+					'a' => self.print_arch(),
+					'd' => self.print_desktop(),
+					'D' => self.print_distro(),
+					'H' => self.print_home(),
+					'k' => self.print_kernel(),
+					'o' => self.print_os(),
+					's' => self.print_shell(),
+					'S' => self.print_session(),
+					'u' => self.print_name(),
+
+					_ => errorhere(&format!("'{}' not a valid argument", c))?,
+				}
+			}
+		}
+		Ok(())
+	}
+
+	fn default(&self) {
+		self.print_distro();
+		self.print_name();
+		self.print_kernel();
+		self.print_shell();
+	}
+
+	fn print_all(&self) {
+		self.print_distro();
+		self.print_name();
+		self.print_home();
+		self.print_kernel();
+		self.print_shell();
+		self.print_arch();
+		self.print_desktop();
+		self.print_session();
+		self.print_os();
+	}
+
+	fn print_arch(&self) {
+		println!("Arch:\t\t{}", self.uname.machine)
+	}
+
+	fn print_desktop(&self) {
+		if let Some(d) = &self.user.desktop {
+			println!("Desktop:\t{}", d)
+		}
+	}
+
+	fn print_home(&self) {
+		if let Some(h) = &self.user.home {
+			println!("Home:\t\t{}", h);
+		}
+	}
+
+	fn print_kernel(&self) {
+		println!("Kernel:\t\t{}", self.uname.release)
+	}
+
+	fn print_os(&self) {
+		println!("OS:\t\t{}", self.uname.sysname)
+	}
+
+	fn print_shell(&self) {
+		if let Some(s) = &self.user.shell {
+			println!("Shell:\t\t{}", s)
+		}
+	}
+
+	fn print_session(&self) {
+		if let Some(s) = &self.user.session {
+			println!("Session:\t{}", s)
+		}
+	}
+
+	fn print_name(&self) {
+		if let Some(n) = &self.user.name {
+			println!("User:\t\t{}", n);
+		}
+	}
+
+	fn print_distro(&self) {
+		if let Some(d) = &self.user.distro {
+			println!("Distro:\t\t{} {}", d, self.uname.sysname)
+		}
+	}
+}
+
+fn main() -> Result<()> {
+	let args: Vec<String> = args().collect();
+
+	let rfetch = Rfetch::create(
+		Ecos::get()?,
+		Uname::get()?,
+	);
+
+	rfetch.run(&args)?;
+
+	Ok(())
+}
+
+fn errorhere<T>(s: &str) -> Result<T> {
+	Err(Error::new(ErrorKind::Other, s))
 }
