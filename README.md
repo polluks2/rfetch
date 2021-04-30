@@ -1,3 +1,3 @@
 # rfetch
 
-cimplefetch but in rust
+A Fetch program in Rust with no dependancies

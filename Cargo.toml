@@ -2,7 +2,7 @@
 name = "rfetch"
 version = "0.1.0"
 authors = ["Avery Murray <averylapine@gmail.com>"]
-license-file = "LICENSE"
+license = "MIT"
 edition = "2018"
 description = "Fetch system and user information with no dependancies"
 repository = "https://github.com/caverym/rfetch"
