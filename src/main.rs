@@ -53,23 +53,23 @@ impl Rfetch {
             return Ok(());
         }
 
-        // If the user wants help.
+        // If the user wants help or all.
         if args.contains(&"--help".into()) || args.contains(&"-h".into()) {
             self.help();
+            return Ok(());
+        } else if args.contains(&"--all".into()) || args.contains(&"-A".into()) {
+            self.print_all();
             return Ok(());
         }
 
         // Iter through each argument, and the characters of every argument.
-        for arg in args.iter().skip(1) {
-            // check if it even is an argument.
+        args.iter().skip(1).try_for_each(|arg| {
             if !arg.contains('-') {
                 error!("missing arguments")?;
             }
 
-            // Collect each char of the argument.
-            let chargs: Vec<char> = arg.chars().collect();
-            chargs.iter().try_for_each(|x| self.parse(x))?;
-        }
+            arg.chars().try_for_each(|x| self.parse(&x))
+        })?;
 
         Ok(())
     }
