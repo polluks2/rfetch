@@ -21,10 +21,6 @@ macro_rules! error {
     ($e:expr) => {
         crate::_errorhere(ErrorKind::Other, $e)
     };
-
-    ($k:expr, $e:expr) => {
-        crate::_errorhere($k, $e)
-    };
 }
 
 fn _errorhere<T>(kind: ErrorKind, s: &str) -> Result<T> {
@@ -107,6 +103,7 @@ impl Rfetch {
             'D' => self.print_distro(),
             'H' => self.print_home(),
             'k' => self.print_kernel(),
+            'n' => self.print_host(),
             'o' => self.print_os(),
             's' => self.print_shell(),
             'S' => self.print_session(),
@@ -152,6 +149,7 @@ impl Rfetch {
         self.print_name();
         self.print_home();
         self.print_kernel();
+        self.print_host();
         self.print_shell();
         self.print_arch();
         self.print_desktop();
@@ -177,6 +175,10 @@ impl Rfetch {
 
     fn print_kernel(&self) {
         println!("Kernel:\t\t{}", self.uname.release)
+    }
+
+    fn print_host(&self) {
+        println!("Host:\t\t{}", self.uname.nodename)
     }
 
     fn print_os(&self) {
