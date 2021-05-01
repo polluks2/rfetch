@@ -1,5 +1,9 @@
 # rfetch
 
+<a href="https://crates.io/crates/rfetch">
+  <img src="https://img.shields.io/crates/v/rfetch?style=flat-square" alt="Crates.io version"/>
+</a>
+
 A Fetch program in Rust with no dependancies
 
 ```
