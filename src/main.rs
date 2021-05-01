@@ -2,6 +2,7 @@ mod ecosys;
 mod uname;
 
 use std::env::args;
+
 use std::io::{Error, ErrorKind, Result};
 
 use ecosys::Ecos;
@@ -15,21 +16,36 @@ macro_rules! printo {
     };
 }
 
+/*
+static TUX: [&str; 7] = [
+    "    .--.",
+    "   |o_o |",
+    "   |:_/ |",
+    "  //   \\ \\",
+    " (|     | )",
+    "/'|_   _/'\\",
+    "\\___)=(___/\\",
+];
+*/
+
 // Main struct to contain the ecosys and uname structs to safely access both.
 struct Rfetch {
     user: Ecos,
     uname: Uname,
+    // logo: Vec<&'static str>,
 }
 
 impl Rfetch {
     pub fn create(user: Ecos, uname: Uname) -> Rfetch {
-        Self { user, uname }
+        Self { user, uname } // logo: Vec::new() }
     }
 
     /// This is effectively the main function.
     /// This will parse the arguments and executes what the user requets.
     pub fn run(self, args: &[String]) -> Result<()> {
         let argc: usize = args.len();
+
+        // self.check_os();
 
         // If there are no arguments, print default and exit.
         if argc == 1 {
@@ -47,29 +63,34 @@ impl Rfetch {
         for arg in args.iter().skip(1) {
             // check if it even is an argument.
             if !arg.contains('-') {
-                errorhere("missing arguments")?;
+                error!("missing arguments")?;
             }
 
             // Collect each char of the argument.
             let chargs: Vec<char> = arg.chars().collect();
-            for c in chargs {
-                match c {
-                    'A' => self.print_all(), // Each method name explains.
-                    'a' => self.print_arch(),
-                    'd' => self.print_desktop(),
-                    'D' => self.print_distro(),
-                    'H' => self.print_home(),
-                    'k' => self.print_kernel(),
-                    'o' => self.print_os(),
-                    's' => self.print_shell(),
-                    'S' => self.print_session(),
-                    'u' => self.print_name(),
-
-                    '-' => (),
-                    _ => errorhere(&format!("'{}' not a valid argument", c))?,
-                }
-            }
+            chargs.iter().try_for_each(|x| self.parse(x))?;
         }
+
+        Ok(())
+    }
+
+    fn parse(&self, c: &char) -> Result<()> {
+        match c {
+            'A' => self.print_all(), // Each method name explains.
+            'a' => self.print_arch(),
+            'd' => self.print_desktop(),
+            'D' => self.print_distro(),
+            'H' => self.print_home(),
+            'k' => self.print_kernel(),
+            'o' => self.print_os(),
+            's' => self.print_shell(),
+            'S' => self.print_session(),
+            'u' => self.print_name(),
+
+            '-' => (),
+            _ => error!(&format!("'{}' not a valid argument", c))?,
+        }
+
         Ok(())
     }
 
@@ -176,13 +197,24 @@ FLAGS:
 fn main() -> Result<()> {
     let args: Vec<String> = args().collect();
 
-    let rfetch = Rfetch::create(Ecos::get()?, Uname::get()?);
+    let rfetch = Rfetch::create(Ecos::get(), Uname::get()?);
 
     rfetch.run(&args)?;
 
     Ok(())
 }
 
-fn errorhere<T>(s: &str) -> Result<T> {
-    Err(Error::new(ErrorKind::Other, s))
+#[macro_export]
+macro_rules! error {
+    ($e:expr) => {
+        crate::_errorhere(ErrorKind::Other, $e)
+    };
+
+    ($k:expr, $e:expr) => {
+        crate::_errorhere($k, $e)
+    };
+}
+
+fn _errorhere<T>(kind: ErrorKind, s: &str) -> Result<T> {
+    Err(Error::new(kind, s))
 }

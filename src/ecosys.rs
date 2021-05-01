@@ -1,8 +1,8 @@
 use std::fs::File;
-use std::io::Result;
+use std::io::{ErrorKind, Result};
 use std::{env::var, io::Read};
 
-use crate::errorhere;
+use crate::error;
 
 macro_rules! handle {
     ($f:expr) => {
@@ -29,17 +29,15 @@ pub struct Ecos {
 
 impl Ecos {
     /// Collects all information, unavailable infromation is `None`
-    pub fn get() -> Result<Self> {
-        let ecos = Self {
+    pub fn get() -> Self {
+        Self {
             name: Self::getuser(),
             home: Self::gethome(),
             shell: Self::getshell(),
             desktop: Self::getdesktop(),
             session: Self::getsession(),
             distro: Self::getdistro(),
-        };
-
-        Ok(ecos)
+        }
     }
 
     fn getuser() -> Option<String> {
@@ -78,7 +76,7 @@ fn read_distro() -> Result<String> {
 
     let lsb: String = match String::from_utf8(buf) {
         Ok(s) => s,
-        Err(e) => errorhere(&e.to_string())?,
+        Err(e) => error!(&e.to_string())?,
     };
 
     let v: Vec<&str> = lsb.split('\n').collect();
@@ -89,7 +87,7 @@ fn read_distro() -> Result<String> {
         }
     }
 
-    errorhere("failed to read distro")
+    error!("failed to read distro")
 }
 
 /// This trait exists purely to change a String to have a capital first

@@ -1,7 +1,7 @@
-use std::io::Result;
+use std::io::{ErrorKind, Result};
 use std::os::raw::{c_char, c_int};
 
-use crate::errorhere;
+use crate::error;
 
 /// Raw `utsname` struct from `/usr/include/sys/utsname.h` C header.
 #[repr(C)]
@@ -33,17 +33,10 @@ impl Uname {
     /// Collects and converts all available information from the utsname
     /// struct from raw C to the safety of Rust.
     pub fn get() -> Result<Self> {
-        let mut raw: utsname = utsname {
-            sysname: [c_char::default(); 65usize],
-            nodename: [c_char::default(); 65usize],
-            release: [c_char::default(); 65usize],
-            version: [c_char::default(); 65usize],
-            machine: [c_char::default(); 65usize],
-            _domainname: [c_char::default(); 65usize],
-        };
+        let mut raw: utsname = unsafe { std::mem::zeroed() };
 
-        unsafe {
-            uname(&mut raw);
+        if 0 != unsafe { uname(&mut raw) } {
+            error!("failed to put information about the system in uname")?;
         }
 
         let info: Uname = Uname {
@@ -63,6 +56,6 @@ impl Uname {
 fn fromraw(s: &[c_char; 65usize]) -> Result<String> {
     match String::from_utf8(s.iter().map(|x| *x as u8).collect()) {
         Ok(res) => Ok(res),
-        Err(e) => errorhere(&e.to_string())?,
+        Err(e) => error!(&e.to_string())?,
     }
 }
