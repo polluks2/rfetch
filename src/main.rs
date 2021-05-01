@@ -16,6 +16,31 @@ macro_rules! printo {
     };
 }
 
+#[macro_export]
+macro_rules! error {
+    ($e:expr) => {
+        crate::_errorhere(ErrorKind::Other, $e)
+    };
+
+    ($k:expr, $e:expr) => {
+        crate::_errorhere($k, $e)
+    };
+}
+
+fn _errorhere<T>(kind: ErrorKind, s: &str) -> Result<T> {
+    Err(Error::new(kind, s))
+}
+
+fn main() -> Result<()> {
+    let args: Vec<String> = args().collect();
+
+    let rfetch = Rfetch::create(Ecos::get(), Uname::get()?);
+
+    rfetch.run(&args)?;
+
+    Ok(())
+}
+
 /*
 static TUX: [&str; 7] = [
     "    .--.",
@@ -193,28 +218,3 @@ FLAGS:
 	-S\t\tView current graphics session
 	-u\t\tView user name
 ";
-
-fn main() -> Result<()> {
-    let args: Vec<String> = args().collect();
-
-    let rfetch = Rfetch::create(Ecos::get(), Uname::get()?);
-
-    rfetch.run(&args)?;
-
-    Ok(())
-}
-
-#[macro_export]
-macro_rules! error {
-    ($e:expr) => {
-        crate::_errorhere(ErrorKind::Other, $e)
-    };
-
-    ($k:expr, $e:expr) => {
-        crate::_errorhere($k, $e)
-    };
-}
-
-fn _errorhere<T>(kind: ErrorKind, s: &str) -> Result<T> {
-    Err(Error::new(kind, s))
-}
