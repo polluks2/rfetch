@@ -8,6 +8,10 @@ use std::io::{Error, ErrorKind, Result};
 use ecosys::Ecos;
 use uname::Uname;
 
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+const AUTHOR: &str = env!("CARGO_PKG_AUTHORS");
+const PACKAGE: &str = env!("CARGO_PKG_NAME");
+
 macro_rules! printo {
     ($fmt:expr, $o:expr) => {
         if let Some(v) = &$o {
@@ -88,6 +92,9 @@ impl Rfetch {
         } else if arg == "--all" || arg == "-A" {
             self.print_all();
             return Ok(());
+        } else if arg == "--version" || arg == "-v" {
+            self.version();
+            return Ok(());
         }
 
         arg.chars().try_for_each(|x| self.parse_chars(x))?;
@@ -165,7 +172,12 @@ impl Rfetch {
     }
 
     fn help(&self) {
-        println!("{}", HELP)
+        println!("{}", HELP);
+        self.version();
+    }
+
+    fn version(&self) {
+        println!("{} {} by {}", PACKAGE, VERSION, AUTHOR)
     }
 
     fn print_arch(&self) {
@@ -227,17 +239,20 @@ const HELP: &str = "\
 Usage: rfetch [FLAG]
 
 FLAGS:
-	-A, --all\tView all
-	-a\t\tVies system architecture
-	-b\t\tView system board family
-	-c\t\tView system CPU
-	-d\t\tView desktop environment
-	-D\t\tView Linux Distribution
-	-h, --help\tView this help information
-	-H\t\tView current user home directory
-	-k\t\tView system kernel
-	-o\t\tView system OS
-	-s\t\tView user shell
-	-S\t\tView current graphics session
-	-u\t\tView user name
+\t-A, --all\tView all
+\t-a\t\tVies system architecture
+\t-b\t\tView system board family
+\t-c\t\tView system CPU
+\t-d\t\tView desktop environment
+\t-D\t\tView Linux Distribution
+\t-h, --help\tView this help information
+\t-H\t\tView current user home directory
+\t-k\t\tView system kernel
+\t-m\t\tView system memory
+\t-n\t\tView system host name
+\t-o\t\tView system OS
+\t-s\t\tView user shell
+\t-S\t\tView current graphics session
+\t-u\t\tView user name
+\t-v, --version\tView rfetch version
 ";
