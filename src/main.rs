@@ -1,7 +1,7 @@
 mod ecosys;
 mod uname;
 
-use std::env::args;
+use std::env::{Args, args};
 
 use std::io::{Error, ErrorKind, Result};
 
@@ -28,11 +28,9 @@ fn _errorhere<T>(kind: ErrorKind, s: &str) -> Result<T> {
 }
 
 fn main() -> Result<()> {
-    let args: Vec<String> = args().collect();
-
     let rfetch = Rfetch::create(Ecos::get(), Uname::get()?);
 
-    rfetch.run(&args)?;
+    rfetch.run(args())?;
 
     Ok(())
 }
@@ -63,10 +61,8 @@ impl Rfetch {
 
     /// This is effectively the main function.
     /// This will parse the arguments and executes what the user requets.
-    pub fn run(self, args: &[String]) -> Result<()> {
+    pub fn run(self, args: Args) -> Result<()> {
         let argc: usize = args.len();
-
-        // self.check_os();
 
         // If there are no arguments, print default and exit.
         if argc == 1 {
@@ -74,31 +70,37 @@ impl Rfetch {
             return Ok(());
         }
 
-        // If the user wants help or all.
-        if args.contains(&"--help".into()) || args.contains(&"-h".into()) {
-            self.help();
-            return Ok(());
-        } else if args.contains(&"--all".into()) || args.contains(&"-A".into()) {
-            self.print_all();
-            return Ok(());
-        }
-
         // Iter through each argument, and the characters of every argument.
-        args.iter().skip(1).try_for_each(|arg| {
-            if !arg.contains('-') {
-                error!("missing arguments")?;
-            }
-
-            arg.chars().try_for_each(|x| self.parse(&x))
-        })?;
+        args.into_iter().skip(1).try_for_each(|arg| self.parse_args(arg))?;
 
         Ok(())
     }
 
-    fn parse(&self, c: &char) -> Result<()> {
+    // Iter through each argument happens here
+    fn parse_args(&self, arg: String) -> Result<()> {
+        if !arg.contains('-') {
+            error!("missing arguments")?;
+        }
+
+        if arg == "--help" || arg == "-h" {
+            self.help();
+            return Ok(());
+        } else if arg == "--all" || arg == "-A" {
+            self.print_all();
+            return Ok(());
+        }
+
+        arg.chars().try_for_each(|x| self.parse_chars(x))?;
+
+        Ok(())
+    }
+
+    // Iter through each char of every argument happens here
+    fn parse_chars(&self, c: char) -> Result<()> {
         match c {
             'A' => self.print_all(), // Each method name explains.
             'a' => self.print_arch(),
+            'c' => self.print_cpu(),
             'd' => self.print_desktop(),
             'D' => self.print_distro(),
             'H' => self.print_home(),
@@ -152,6 +154,7 @@ impl Rfetch {
         self.print_host();
         self.print_shell();
         self.print_arch();
+        self.print_cpu();
         self.print_desktop();
         self.print_session();
         self.print_os();
@@ -163,6 +166,10 @@ impl Rfetch {
 
     fn print_arch(&self) {
         println!("Arch:\t\t{}", self.uname.machine)
+    }
+
+    fn print_cpu(&self) {
+        printo!("CPU:\t\t{}", self.user.cpu)
     }
 
     fn print_desktop(&self) {

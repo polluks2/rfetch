@@ -25,6 +25,7 @@ pub struct Ecos {
     pub desktop: Option<String>,
     pub session: Option<String>,
     pub distro: Option<String>,
+    pub cpu: Option<String>,
 }
 
 impl Ecos {
@@ -37,6 +38,7 @@ impl Ecos {
             desktop: Self::getdesktop(),
             session: Self::getsession(),
             distro: Self::getdistro(),
+            cpu: Self::getcpu(),
         }
     }
 
@@ -64,6 +66,10 @@ impl Ecos {
     fn getdistro() -> Option<String> {
         handle!(read_distro())
     }
+
+    fn getcpu() -> Option<String> {
+        handle!(read_cpu())
+    }
 }
 
 /// This function will read the `/etc/lsb-release` file on a Linux system and
@@ -82,12 +88,37 @@ fn read_distro() -> Result<String> {
     let v: Vec<&str> = lsb.split('\n').collect();
     for l in v {
         if l.contains("DISTRIB_ID") {
-            let n: Vec<&str> = l.split('=').collect();
-            return Ok(n[1].into());
+            return Ok(get_special(l, '='))
         }
     }
 
     error!("failed to read distro")
+}
+
+fn read_cpu() -> Result<String> {
+    let mut file: File = File::open("/proc/cpuinfo")?;
+
+    let mut buf: Vec<u8> = Vec::new();
+    file.read_to_end(&mut buf)?;
+
+    let cpu: String = match String::from_utf8(buf) {
+        Ok(s) => s,
+        Err(e) => error!(&e.to_string())?,
+    };
+
+    let v: Vec<&str> = cpu.split('\n').collect();
+    for l in v {
+        if l.contains("model name") {
+            return Ok(get_special(l, ':'))
+        }
+    }
+
+    error!("failed to read CPU")
+}
+
+fn get_special(s: &str, split: char) -> String {
+    let n: Vec<&str> = s.split(split).collect();
+    return n[1].to_string().trim().into()
 }
 
 /// This trait exists purely to change a String to have a capital first
