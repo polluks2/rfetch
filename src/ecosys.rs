@@ -18,6 +18,7 @@ pub struct Ecos {
     pub distro: Option<String>,
     pub cpu: Option<String>,
     pub board: Option<String>,
+    pub mem: Option<String>,
 }
 
 impl Ecos {
@@ -32,6 +33,7 @@ impl Ecos {
             distro: Self::getdistro(),
             cpu: Self::getcpu(),
             board: Self::getproduct(),
+            mem: Self::getmem(),
         }
     }
 
@@ -67,6 +69,21 @@ impl Ecos {
     fn getproduct() -> Option<String> {
         read_product().ok()
     }
+
+    fn getmem() -> Option<String> {
+        let totalstr = read_memory("MemTotal").ok()?;
+        let freestr = read_memory("MemFree").ok()?;
+        let bufferstr = read_memory("Buffers").ok()?;
+        let cachedstr = read_memory("Cached").ok()?;
+
+        let total: u32 = totalstr.parse().ok()?;
+        let free: u32 = freestr.parse().ok()?;
+        let buffers: u32 = bufferstr.parse().ok()?;
+        let cached: u32 = cachedstr.parse().ok()?;
+        // let avail: u32 = availstr.parse().ok()?;
+
+        Some(format!("{}/{}", (total-free-buffers-cached)/1024, (total)/1024))
+    }
 }
 
 /// This function will read the `/etc/lsb-release` file on a Linux system and
@@ -85,7 +102,7 @@ fn read_distro() -> Result<String> {
     let v: Vec<&str> = lsb.split('\n').collect();
     for l in v {
         if l.contains("DISTRIB_ID") {
-            return Ok(get_special(l, '='))
+            return Ok(get_special(l, '=', 1))
         }
     }
 
@@ -106,7 +123,7 @@ fn read_cpu() -> Result<String> {
     let v: Vec<&str> = cpu.split('\n').collect();
     for l in v {
         if l.contains("model name") {
-            return Ok(get_special(l, ':'))
+            return Ok(get_special(l, ':', 1))
         }
     }
 
@@ -127,9 +144,31 @@ fn read_product() -> Result<String> {
     Ok(family.trim().to_string())
 }
 
-fn get_special(s: &str, split: char) -> String {
+fn read_memory(p: &str) -> Result<String> {
+    let mut file = File::open("/proc/meminfo")?;
+
+    let mut buf: Vec<u8> = Vec::new();
+    file.read_to_end(&mut buf)?;
+
+    let meminfo: String = match String::from_utf8(buf) {
+        Ok(s) => s,
+        Err(e) => error!(&e.to_string())?,
+    };
+
+    let v: Vec<&str> = meminfo.split('\n').collect();
+    for l in v {
+        if l.contains(p) {
+            let tmp = get_special(l, ':', 1);
+            return Ok(get_special(&tmp, ' ', 0));
+        }
+    }
+
+    error!("failed to read meminfo")
+}
+
+fn get_special(s: &str, split: char, v: usize) -> String {
     let n: Vec<&str> = s.split(split).collect();
-    return n[1].to_string().trim().into()
+    return n[v].to_string().trim().into()
 }
 
 /// This trait exists purely to change a String to have a capital first

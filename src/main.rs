@@ -106,6 +106,7 @@ impl Rfetch {
             'D' => self.print_distro(),
             'H' => self.print_home(),
             'k' => self.print_kernel(),
+            'm' => self.print_mem(),
             'n' => self.print_host(),
             'o' => self.print_os(),
             's' => self.print_shell(),
@@ -157,6 +158,7 @@ impl Rfetch {
         self.print_arch();
         self.print_cpu();
         self.print_board();
+        self.print_mem();
         self.print_desktop();
         self.print_session();
         self.print_os();
@@ -188,6 +190,10 @@ impl Rfetch {
 
     fn print_kernel(&self) {
         println!("Kernel:\t\t{}", self.uname.release)
+    }
+
+    fn print_mem(&self) {
+        printo!("Memory:\t\t{} MiB", self.user.mem)
     }
 
     fn print_host(&self) {
@@ -223,6 +229,8 @@ Usage: rfetch [FLAG]
 FLAGS:
 	-A, --all\tView all
 	-a\t\tVies system architecture
+	-b\t\tView system board family
+	-c\t\tView system CPU
 	-d\t\tView desktop environment
 	-D\t\tView Linux Distribution
 	-h, --help\tView this help information

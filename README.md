@@ -9,6 +9,8 @@ A Fetch program in Rust with no dependancies
 ```
 -A, --all	View all
 -a		Vies system architecture
+-b		View system board family
+-c		View system CPU
 -d		View desktop environment
 -D		View Linux Distribution
 -h, --help	View this help information
@@ -18,4 +20,5 @@ A Fetch program in Rust with no dependancies
 -s		View user shell
 -S		View current graphics session
 -u		View user name
+
 ```
