@@ -4,15 +4,6 @@ use std::{env::var, io::Read};
 
 use crate::error;
 
-macro_rules! handle {
-    ($f:expr) => {
-        match $f {
-            Ok(a) => Some(a),
-            _ => None,
-        }
-    };
-}
-
 /// Ecos system 'Ecosystem' struct contains user's account and desktop
 /// information.
 /// All information is contained in `Option`, if information is unavailable
@@ -26,6 +17,7 @@ pub struct Ecos {
     pub session: Option<String>,
     pub distro: Option<String>,
     pub cpu: Option<String>,
+    pub board: Option<String>,
 }
 
 impl Ecos {
@@ -39,36 +31,41 @@ impl Ecos {
             session: Self::getsession(),
             distro: Self::getdistro(),
             cpu: Self::getcpu(),
+            board: Self::getproduct(),
         }
     }
 
     fn getuser() -> Option<String> {
-        handle!(var("USER"))
+        var("USER").ok()
     }
 
     fn gethome() -> Option<String> {
-        handle!(var("HOME"))
+        var("HOME").ok()
     }
 
     fn getshell() -> Option<String> {
-        let path = handle!(var("SHELL"))?;
+        let path = var("SHELL").ok()?;
         Some(path.split('/').last()?.to_string().to_title())
     }
 
     fn getdesktop() -> Option<String> {
-        Some(handle!(var("DESKTOP_SESSION"))?.to_title())
+        Some(var("DESKTOP_SESSION").ok()?.to_title())
     }
 
     fn getsession() -> Option<String> {
-        Some(handle!(var("XDG_SESSION_TYPE"))?.to_title())
+        Some(var("XDG_SESSION_TYPE").ok()?.to_title())
     }
 
     fn getdistro() -> Option<String> {
-        handle!(read_distro())
+        read_distro().ok()
     }
 
     fn getcpu() -> Option<String> {
-        handle!(read_cpu())
+        read_cpu().ok()
+    }
+
+    fn getproduct() -> Option<String> {
+        read_product().ok()
     }
 }
 
@@ -114,6 +111,20 @@ fn read_cpu() -> Result<String> {
     }
 
     error!("failed to read CPU")
+}
+
+fn read_product() -> Result<String> {
+    let mut famfile: File = File::open("/sys/devices/virtual/dmi/id/product_family")?;
+
+    let mut buf: Vec<u8> = Vec::new();
+    famfile.read_to_end(&mut buf)?;
+
+    let family = match String::from_utf8(buf) {
+        Ok(s) => s,
+        Err(e) => error!(&e.to_string())?,
+    };
+
+    Ok(family.trim().to_string())
 }
 
 fn get_special(s: &str, split: char) -> String {

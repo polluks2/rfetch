@@ -100,6 +100,7 @@ impl Rfetch {
         match c {
             'A' => self.print_all(), // Each method name explains.
             'a' => self.print_arch(),
+            'b' => self.print_board(),
             'c' => self.print_cpu(),
             'd' => self.print_desktop(),
             'D' => self.print_distro(),
@@ -155,6 +156,7 @@ impl Rfetch {
         self.print_shell();
         self.print_arch();
         self.print_cpu();
+        self.print_board();
         self.print_desktop();
         self.print_session();
         self.print_os();
@@ -166,6 +168,10 @@ impl Rfetch {
 
     fn print_arch(&self) {
         println!("Arch:\t\t{}", self.uname.machine)
+    }
+
+    fn print_board(&self) {
+        printo!("Host:\t\t{}", self.user.board)
     }
 
     fn print_cpu(&self) {
@@ -185,7 +191,7 @@ impl Rfetch {
     }
 
     fn print_host(&self) {
-        println!("Host:\t\t{}", self.uname.nodename)
+        println!("Hostname:\t{}", self.uname.nodename)
     }
 
     fn print_os(&self) {
