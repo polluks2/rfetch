@@ -19,6 +19,7 @@ pub struct Ecos {
     pub cpu: Option<String>,
     pub board: Option<String>,
     pub mem: Option<String>,
+    pub uptime: Option<String>,
 }
 
 impl Ecos {
@@ -34,6 +35,7 @@ impl Ecos {
             cpu: Self::getcpu(),
             board: Self::getproduct(),
             mem: Self::getmem(),
+            uptime: Self::getuptime(),
         }
     }
 
@@ -51,7 +53,9 @@ impl Ecos {
     }
 
     fn getdesktop() -> Option<String> {
-        Some(var("DESKTOP_SESSION").ok()?.to_title())
+        let mut desktop = var("DESKTOP_SESSION").ok()?;
+        desktop.make_ascii_uppercase();
+        Some(desktop)
     }
 
     fn getsession() -> Option<String> {
@@ -70,6 +74,8 @@ impl Ecos {
         read_product().ok()
     }
 
+    ///
+    /// Also very inefficiet. Shouldn't read the file four times.
     fn getmem() -> Option<String> {
         let totalstr = read_memory("MemTotal").ok()?;
         let freestr = read_memory("MemFree").ok()?;
@@ -84,20 +90,16 @@ impl Ecos {
 
         Some(format!("{}/{}", (total-free-buffers-cached)/1024, (total)/1024))
     }
+
+    fn getuptime() -> Option<String> {
+        read_uptime().ok()
+    }
 }
 
 /// This function will read the `/etc/lsb-release` file on a Linux system and
 /// parse to find the `DISTRIB_ID` item. Returns `Ok(DISTRIB_ID)` on success.
 fn read_distro() -> Result<String> {
-    let mut file: File = File::open("/etc/lsb-release")?;
-
-    let mut buf: Vec<u8> = Vec::new();
-    file.read_to_end(&mut buf)?;
-
-    let lsb: String = match String::from_utf8(buf) {
-        Ok(s) => s,
-        Err(e) => error!(&e.to_string())?,
-    };
+    let lsb = read_file("/etc/lsb-release")?;
 
     let v: Vec<&str> = lsb.split('\n').collect();
     for l in v {
@@ -110,15 +112,7 @@ fn read_distro() -> Result<String> {
 }
 
 fn read_cpu() -> Result<String> {
-    let mut file: File = File::open("/proc/cpuinfo")?;
-
-    let mut buf: Vec<u8> = Vec::new();
-    file.read_to_end(&mut buf)?;
-
-    let cpu: String = match String::from_utf8(buf) {
-        Ok(s) => s,
-        Err(e) => error!(&e.to_string())?,
-    };
+    let cpu = read_file("/proc/cpuinfo")?;
 
     let v: Vec<&str> = cpu.split('\n').collect();
     for l in v {
@@ -131,29 +125,11 @@ fn read_cpu() -> Result<String> {
 }
 
 fn read_product() -> Result<String> {
-    let mut famfile: File = File::open("/sys/devices/virtual/dmi/id/product_family")?;
-
-    let mut buf: Vec<u8> = Vec::new();
-    famfile.read_to_end(&mut buf)?;
-
-    let family = match String::from_utf8(buf) {
-        Ok(s) => s,
-        Err(e) => error!(&e.to_string())?,
-    };
-
-    Ok(family.trim().to_string())
+    read_file("/sys/devices/virtual/dmi/id/product_family")
 }
 
 fn read_memory(p: &str) -> Result<String> {
-    let mut file = File::open("/proc/meminfo")?;
-
-    let mut buf: Vec<u8> = Vec::new();
-    file.read_to_end(&mut buf)?;
-
-    let meminfo: String = match String::from_utf8(buf) {
-        Ok(s) => s,
-        Err(e) => error!(&e.to_string())?,
-    };
+    let meminfo = read_file("/proc/meminfo")?;
 
     let v: Vec<&str> = meminfo.split('\n').collect();
     for l in v {
@@ -166,9 +142,47 @@ fn read_memory(p: &str) -> Result<String> {
     error!("failed to read meminfo")
 }
 
+fn read_uptime() -> Result<String> {
+    let mut uptimestr = read_file("/proc/uptime")?;
+    uptimestr = uptimestr.split('.').collect::<Vec<&str>>()[0].to_string();
+
+    if let Ok(secondes) = uptimestr.parse::<u32>() {
+        let heures = secondes / 3600;
+        let minutes = (secondes - (3600 * heures)) / 60;
+        let sec = secondes - (3600 * heures) - (minutes * 60);
+        
+        let mut ut = format!("{}s", sec);
+
+        if minutes > 1 || heures > 0 {
+            ut = format!("{}m {}", minutes, ut);
+        }
+
+        if heures > 0 {
+            ut = format!("{}h {}", heures, ut);
+        }
+        return Ok(ut);
+    }
+
+    error!("failed to parse uptime")
+}
+
 fn get_special(s: &str, split: char, v: usize) -> String {
     let n: Vec<&str> = s.split(split).collect();
     return n[v].to_string().trim().into()
+}
+
+fn read_file(path: &str) -> Result<String> {
+    let mut file = File::open(path)?;
+
+    let mut buf = Vec::new();
+    file.read_to_end(&mut buf)?;
+
+    let string = match String::from_utf8(buf) {
+        Ok(s) => s.trim().into(),
+        Err(e) => error!(e)?,
+    };
+
+    Ok(string)
 }
 
 /// This trait exists purely to change a String to have a capital first

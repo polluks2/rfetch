@@ -7,12 +7,12 @@ use crate::error;
 #[repr(C)]
 #[derive(Copy, Clone)]
 struct utsname {
-    pub sysname: [c_char; 65usize],
-    pub nodename: [c_char; 65usize],
-    pub release: [c_char; 65usize],
-    pub version: [c_char; 65usize],
-    pub machine: [c_char; 65usize],
-    pub _domainname: [c_char; 65usize],
+    pub sysname: [c_char; 65_usize],
+    pub nodename: [c_char; 65_usize],
+    pub release: [c_char; 65_usize],
+    pub version: [c_char; 65_usize],
+    pub machine: [c_char; 65_usize],
+    pub _domainname: [c_char; 65_usize],
 }
 
 extern "C" {
@@ -20,13 +20,13 @@ extern "C" {
 }
 
 /// Safe implementation of `/usr/include/sys/utsname.h` header.
+#[derive(Debug)]
 pub struct Uname {
     pub sysname: String,
     pub nodename: String,
     pub release: String,
     pub version: String,
     pub machine: String,
-    pub domainname: String,
 }
 
 impl Uname {
@@ -40,12 +40,11 @@ impl Uname {
         }
 
         let info: Uname = Uname {
-            sysname: fromraw(&raw.sysname)?,
-            nodename: fromraw(&raw.nodename)?,
-            release: fromraw(&raw.release)?,
-            version: fromraw(&raw.version)?,
-            machine: fromraw(&raw.machine)?,
-            domainname: fromraw(&raw._domainname)?,
+            sysname: fromraw(&raw.sysname)?.trim().to_string(),
+            nodename: fromraw(&raw.nodename)?.trim().to_string(),
+            release: fromraw(&raw.release)?.trim().to_string(),
+            version: fromraw(&raw.version)?.trim().to_string(),
+            machine: fromraw(&raw.machine)?.trim().to_string(),
         };
 
         Ok(info)
@@ -54,7 +53,9 @@ impl Uname {
 
 /// The actual function which converts C char arrays into Rust `String`.
 fn fromraw(s: &[c_char; 65usize]) -> Result<String> {
-    match String::from_utf8(s.iter().map(|x| *x as u8).collect()) {
+    let mut v = s.iter().map(|x| *x as u8).collect::<Vec<u8>>();
+    v.retain(|x| *x != 0);
+    match String::from_utf8(v) {
         Ok(res) => Ok(res),
         Err(e) => error!(&e.to_string())?,
     }

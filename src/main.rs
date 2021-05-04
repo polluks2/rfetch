@@ -1,12 +1,9 @@
 mod ecosys;
 mod uname;
-
-use std::env::{Args, args};
-
-use std::io::{Error, ErrorKind, Result};
-
 use ecosys::Ecos;
 use uname::Uname;
+use std::env::{Args, args};
+use std::io::{Error, ErrorKind, Result};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const AUTHOR: &str = env!("CARGO_PKG_AUTHORS");
@@ -27,35 +24,25 @@ macro_rules! error {
     };
 }
 
-fn _errorhere<T>(kind: ErrorKind, s: &str) -> Result<T> {
-    Err(Error::new(kind, s))
+fn _errorhere<R, T: ToString>(kind: ErrorKind, s: T) -> Result<R> {
+    Err(Error::new(kind, s.to_string()))
 }
 
 fn main() -> Result<()> {
     let rfetch = Rfetch::create(Ecos::get(), Uname::get()?);
 
-    rfetch.run(args())?;
+    if let Err(e) = rfetch.run(args()) {
+        eprintln!("{}", e);
+    }
 
     Ok(())
 }
 
-/*
-static TUX: [&str; 7] = [
-    "    .--.",
-    "   |o_o |",
-    "   |:_/ |",
-    "  //   \\ \\",
-    " (|     | )",
-    "/'|_   _/'\\",
-    "\\___)=(___/\\",
-];
-*/
-
-// Main struct to contain the ecosys and uname structs to safely access both.
+/// Main struct to contain the ecosys and uname structs to safely access both.
+#[derive(Debug)]
 struct Rfetch {
     user: Ecos,
     uname: Uname,
-    // logo: Vec<&'static str>,
 }
 
 impl Rfetch {
@@ -66,35 +53,39 @@ impl Rfetch {
     /// This is effectively the main function.
     /// This will parse the arguments and executes what the user requets.
     pub fn run(self, args: Args) -> Result<()> {
-        let argc: usize = args.len();
-
         // If there are no arguments, print default and exit.
-        if argc == 1 {
-            self.default();
+        if args.len() == 1 {
+            self.print_all();
             return Ok(());
         }
 
         // Iter through each argument, and the characters of every argument.
-        args.into_iter().skip(1).try_for_each(|arg| self.parse_args(arg))?;
+        args.into_iter().skip(1).try_for_each(|arg| self.parse_args(&arg))?;
 
         Ok(())
     }
 
     // Iter through each argument happens here
-    fn parse_args(&self, arg: String) -> Result<()> {
+    fn parse_args(&self, arg: &str) -> Result<()> {
         if !arg.contains('-') {
             error!("missing arguments")?;
         }
 
         if arg == "--help" || arg == "-h" {
-            self.help();
+            Self::help();
             return Ok(());
         } else if arg == "--all" || arg == "-A" {
             self.print_all();
             return Ok(());
         } else if arg == "--version" || arg == "-v" {
-            self.version();
-            return Ok(());
+            Self::version();
+            return Ok(());    
+        }
+
+        #[cfg(debug_assertions)]
+        if arg == "--debug" {
+            dbg!(self);
+            return Ok(())
         }
 
         arg.chars().try_for_each(|x| self.parse_chars(x))?;
@@ -118,42 +109,18 @@ impl Rfetch {
             'o' => self.print_os(),
             's' => self.print_shell(),
             'S' => self.print_session(),
+            't' => self.print_time(),
             'u' => self.print_name(),
 
             '-' => (),
-            _ => error!(&format!("'{}' not a valid argument", c))?,
+            _ => error!(format!("'{}' not a valid argument", c))?,
         }
 
         Ok(())
     }
 
     ///
-    /// ```
-    /// Distro:     Arch Linux
-    /// User:       avery
-    /// Kernel:     5.11.16-arch1-1
-    /// Shell:     Fish
-    /// ```
-    ///
-    fn default(&self) {
-        self.print_distro();
-        self.print_name();
-        self.print_kernel();
-        self.print_shell();
-    }
-
-    ///
-    /// ```
-    /// Distro:     Arch Linux
-    /// User:       avery
-    /// Home:       /home/avery
-    /// Kernel:     5.11.16-arch1-1
-    /// Shell:      Fish
-    /// Arch:       x86_64
-    /// Desktop:    Gnome
-    /// Session:    Wayland
-    /// OS:         Linux
-    /// ```
+    /// Isn't this super efficient.
     ///
     fn print_all(&self) {
         self.print_distro();
@@ -165,18 +132,20 @@ impl Rfetch {
         self.print_arch();
         self.print_cpu();
         self.print_board();
+        self.print_time();
         self.print_mem();
         self.print_desktop();
         self.print_session();
         self.print_os();
     }
 
-    fn help(&self) {
+    fn help() {
+        println!("Usage: {} [FLAG]", PACKAGE);
         println!("{}", HELP);
-        self.version();
+        Self::version();
     }
 
-    fn version(&self) {
+    fn version() {
         println!("{} {} by {}", PACKAGE, VERSION, AUTHOR)
     }
 
@@ -224,6 +193,10 @@ impl Rfetch {
         printo!("Session:\t{}", self.user.session)
     }
 
+    fn print_time(&self) {
+        printo!("Uptime:\t\t{}", self.user.uptime)
+    }
+
     fn print_name(&self) {
         printo!("User:\t\t{}", self.user.name)
     }
@@ -235,9 +208,7 @@ impl Rfetch {
     }
 }
 
-const HELP: &str = "\
-Usage: rfetch [FLAG]
-
+const HELP: &str = "
 FLAGS:
 \t-A, --all\tView all
 \t-a\t\tVies system architecture
@@ -253,6 +224,7 @@ FLAGS:
 \t-o\t\tView system OS
 \t-s\t\tView user shell
 \t-S\t\tView current graphics session
+\t-t\t\tView system uptime
 \t-u\t\tView user name
 \t-v, --version\tView rfetch version
 ";
