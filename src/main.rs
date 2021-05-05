@@ -55,7 +55,7 @@ impl Rfetch {
     pub fn run(self, args: Args) -> Result<()> {
         // If there are no arguments, print default and exit.
         if args.len() == 1 {
-            self.print_all();
+            self.print_default();
             return Ok(());
         }
 
@@ -73,9 +73,6 @@ impl Rfetch {
 
         if arg == "--help" || arg == "-h" {
             Self::help();
-            return Ok(());
-        } else if arg == "--all" || arg == "-A" {
-            self.print_all();
             return Ok(());
         } else if arg == "--version" || arg == "-v" {
             Self::version();
@@ -96,8 +93,7 @@ impl Rfetch {
     // Iter through each char of every argument happens here
     fn parse_chars(&self, c: char) -> Result<()> {
         match c {
-            'A' => self.print_all(), // Each method name explains.
-            'a' => self.print_arch(),
+            'a' => self.print_arch(), // Each method name explains.
             'b' => self.print_board(),
             'c' => self.print_cpu(),
             'd' => self.print_desktop(),
@@ -122,7 +118,7 @@ impl Rfetch {
     ///
     /// Isn't this super efficient.
     ///
-    fn print_all(&self) {
+    fn print_default(&self) {
         self.print_distro();
         self.print_name();
         self.print_home();
@@ -210,7 +206,6 @@ impl Rfetch {
 
 const HELP: &str = "
 FLAGS:
-\t-A, --all\tView all
 \t-a\t\tVies system architecture
 \t-b\t\tView system board family
 \t-c\t\tView system CPU

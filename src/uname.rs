@@ -35,8 +35,10 @@ impl Uname {
     pub fn get() -> Result<Self> {
         let mut raw: utsname = unsafe { std::mem::zeroed() };
 
-        if 0 != unsafe { uname(&mut raw) } {
-            error!("failed to put information about the system in uname")?;
+        let ret = unsafe { uname(&mut raw) };
+
+        if ret != 0 {
+            error!("failed to fill uname")?;
         }
 
         let info: Uname = Uname {
