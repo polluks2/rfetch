@@ -204,7 +204,7 @@ impl Rfetch {
 
 const HELP: &str = "
 FLAGS:
-\t-a\t\tVies system architecture
+\t-a\t\tView system architecture
 \t-b\t\tView system board family
 \t-c\t\tView system CPU
 \t-d\t\tView desktop environment
