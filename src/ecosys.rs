@@ -88,7 +88,11 @@ impl Ecos {
         let cached: u32 = cachedstr.parse().ok()?;
         // let avail: u32 = availstr.parse().ok()?;
 
-        Some(format!("{}/{}", (total-free-buffers-cached)/1024, (total)/1024))
+        Some(format!(
+            "{}/{}",
+            (total - free - buffers - cached) / 1024,
+            (total) / 1024
+        ))
     }
 
     fn getuptime() -> Option<String> {
@@ -104,7 +108,7 @@ fn read_distro() -> Result<String> {
     let v: Vec<&str> = lsb.split('\n').collect();
     for l in v {
         if l.contains("DISTRIB_ID") {
-            return Ok(get_special(l, '=', 1))
+            return Ok(get_special(l, '=', 1));
         }
     }
 
@@ -117,7 +121,7 @@ fn read_cpu() -> Result<String> {
     let v: Vec<&str> = cpu.split('\n').collect();
     for l in v {
         if l.contains("model name") {
-            return Ok(get_special(l, ':', 1))
+            return Ok(get_special(l, ':', 1));
         }
     }
 
@@ -150,7 +154,7 @@ fn read_uptime() -> Result<String> {
         let heures = secondes / 3600;
         let minutes = (secondes - (3600 * heures)) / 60;
         let sec = secondes - (3600 * heures) - (minutes * 60);
-        
+
         let mut ut = format!("{}s", sec);
 
         if minutes > 1 || heures > 0 {
@@ -168,7 +172,7 @@ fn read_uptime() -> Result<String> {
 
 fn get_special(s: &str, split: char, v: usize) -> String {
     let n: Vec<&str> = s.split(split).collect();
-    return n[v].to_string().trim().into()
+    return n[v].to_string().trim().into();
 }
 
 fn read_file(path: &str) -> Result<String> {

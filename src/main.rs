@@ -1,9 +1,9 @@
 mod ecosys;
 mod uname;
 use ecosys::Ecos;
-use uname::Uname;
-use std::env::{Args, args};
+use std::env::{args, Args};
 use std::io::{Error, ErrorKind, Result};
+use uname::Uname;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const AUTHOR: &str = env!("CARGO_PKG_AUTHORS");
@@ -12,7 +12,7 @@ const PACKAGE: &str = env!("CARGO_PKG_NAME");
 macro_rules! printo {
     ($fmt:expr, $o:expr) => {
         if let Some(v) = &$o {
-            println!($fmt, v);
+            print!($fmt, v);
         }
     };
 }
@@ -56,11 +56,12 @@ impl Rfetch {
         // If there are no arguments, print default and exit.
         if args.len() == 1 {
             self.print_default();
-            return Ok(());
+        } else {
+            // Iter through each argument, and the characters of every argument.
+            args.into_iter()
+                .skip(1)
+                .try_for_each(|arg| self.parse_args(&arg))?;
         }
-
-        // Iter through each argument, and the characters of every argument.
-        args.into_iter().skip(1).try_for_each(|arg| self.parse_args(&arg))?;
 
         Ok(())
     }
@@ -71,21 +72,13 @@ impl Rfetch {
             error!("missing arguments")?;
         }
 
-        if arg == "--help" || arg == "-h" {
-            Self::help();
-            return Ok(());
-        } else if arg == "--version" || arg == "-v" {
-            Self::version();
-            return Ok(());    
+        match arg {
+            "--help" | "-h" => Self::help(),
+            "--version" | "-v" => Self::version(),
+            #[cfg(debug_assertions)]
+            "--debug" => {dbg!(self);}
+            _ => arg.chars().try_for_each(|x| self.parse_chars(x))?,
         }
-
-        #[cfg(debug_assertions)]
-        if arg == "--debug" {
-            dbg!(self);
-            return Ok(())
-        }
-
-        arg.chars().try_for_each(|x| self.parse_chars(x))?;
 
         Ok(())
     }
@@ -119,20 +112,19 @@ impl Rfetch {
     /// Isn't this super efficient.
     ///
     fn print_default(&self) {
+        self.handle();
         self.print_distro();
-        self.print_name();
         self.print_home();
         self.print_kernel();
-        self.print_host();
-        self.print_shell();
         self.print_arch();
-        self.print_cpu();
+        self.print_shell();
         self.print_board();
+        self.print_cpu();
         self.print_time();
-        self.print_mem();
         self.print_desktop();
         self.print_session();
         self.print_os();
+        self.print_mem();
     }
 
     fn help() {
@@ -145,24 +137,30 @@ impl Rfetch {
         println!("{} {} by {}", PACKAGE, VERSION, AUTHOR)
     }
 
+    fn handle(&self) {
+        printo!("\t\t{}@", self.user.name);
+        println!("{}", self.uname.nodename);
+        println!("\t    --------------------");
+    }
+
     fn print_arch(&self) {
         println!("Arch:\t\t{}", self.uname.machine)
     }
 
     fn print_board(&self) {
-        printo!("Host:\t\t{}", self.user.board)
+        printo!("Host:\t\t{}\n", self.user.board)
     }
 
     fn print_cpu(&self) {
-        printo!("CPU:\t\t{}", self.user.cpu)
+        printo!("CPU:\t\t{}\n", self.user.cpu)
     }
 
     fn print_desktop(&self) {
-        printo!("Desktop:\t{}", self.user.desktop)
+        printo!("Desktop:\t{}\n", self.user.desktop)
     }
 
     fn print_home(&self) {
-        printo!("Home:\t\t{}", self.user.home)
+        printo!("Home:\t\t{}\n", self.user.home)
     }
 
     fn print_kernel(&self) {
@@ -170,7 +168,7 @@ impl Rfetch {
     }
 
     fn print_mem(&self) {
-        printo!("Memory:\t\t{} MiB", self.user.mem)
+        printo!("Memory:\t\t{} MiB\n", self.user.mem)
     }
 
     fn print_host(&self) {
@@ -182,19 +180,19 @@ impl Rfetch {
     }
 
     fn print_shell(&self) {
-        printo!("Shell:\t\t{}", self.user.shell)
+        printo!("Shell:\t\t{}\n", self.user.shell)
     }
 
     fn print_session(&self) {
-        printo!("Session:\t{}", self.user.session)
+        printo!("Session:\t{}\n", self.user.session)
     }
 
     fn print_time(&self) {
-        printo!("Uptime:\t\t{}", self.user.uptime)
+        printo!("Uptime:\t\t{}\n", self.user.uptime)
     }
 
     fn print_name(&self) {
-        printo!("User:\t\t{}", self.user.name)
+        printo!("User:\t\t{}\n", self.user.name)
     }
 
     fn print_distro(&self) {
