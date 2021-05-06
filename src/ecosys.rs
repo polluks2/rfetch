@@ -24,7 +24,7 @@ pub struct Ecos {
 
 impl Ecos {
     /// Collects all information, unavailable infromation is `None`
-    pub fn get() -> Self {
+    pub fn new() -> Self {
         Self {
             name: Self::getuser(),
             home: Self::gethome(),
@@ -172,7 +172,7 @@ fn read_uptime() -> Result<String> {
 
 fn get_special(s: &str, split: char, v: usize) -> String {
     let n: Vec<&str> = s.split(split).collect();
-    return n[v].to_string().trim().into();
+    return n[v].trim().into()
 }
 
 fn read_file(path: &str) -> Result<String> {

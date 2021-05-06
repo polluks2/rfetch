@@ -32,13 +32,13 @@ pub struct Uname {
 impl Uname {
     /// Collects and converts all available information from the utsname
     /// struct from raw C to the safety of Rust.
-    pub fn get() -> Result<Self> {
+    pub fn new() -> Result<Self> {
         let mut raw: utsname = unsafe { std::mem::zeroed() };
 
         let ret = unsafe { uname(&mut raw) };
 
         if ret != 0 {
-            error!("failed to fill uname")?;
+            error!("Failed to fill uname")?;
         }
 
         let info: Uname = Uname {

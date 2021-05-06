@@ -29,7 +29,7 @@ fn _errorhere<R, T: ToString>(kind: ErrorKind, s: T) -> Result<R> {
 }
 
 fn main() -> Result<()> {
-    let rfetch = Rfetch::create(Ecos::get(), Uname::get()?);
+    let rfetch = Rfetch::create(Ecos::new(), Uname::new()?);
 
     if let Err(e) = rfetch.run(args()) {
         eprintln!("{}", e);
@@ -138,9 +138,26 @@ impl Rfetch {
     }
 
     fn handle(&self) {
+        let mut count = 1;
+
+        let name = if let Some(n) = &self.user.name {
+            n
+        } else {
+            self.print_host();
+            return;
+        };
+
+        count += name.len();
+        count += self.uname.nodename.len();
         printo!("\t\t{}@", self.user.name);
-        println!("{}", self.uname.nodename);
-        println!("\t    --------------------");
+        print!("{}\n\t\t", self.uname.nodename);
+
+        let vsep = vec!['-'; count];
+        for s in vsep {
+            print!("{}", s);
+        }
+
+        println!();
     }
 
     fn print_arch(&self) {
