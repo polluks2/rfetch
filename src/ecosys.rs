@@ -100,15 +100,17 @@ impl Ecos {
     }
 }
 
-/// This function will read the `/etc/lsb-release` file on a Linux system and
-/// parse to find the `DISTRIB_ID` item. Returns `Ok(DISTRIB_ID)` on success.
+/// This function will read the `/etc/os-release` file on a Linux system and
+/// parse to find the `PRETTY_NAME` item. Returns `Ok(PRETTY_NAME)` on success.
 fn read_distro() -> Result<String> {
-    let lsb = read_file("/etc/lsb-release")?;
+    let lsb = read_file("/etc/os-release")?;
 
     let v: Vec<&str> = lsb.split('\n').collect();
     for l in v {
-        if l.contains("DISTRIB_ID") {
-            return Ok(get_special(l, '=', 1));
+        if l.contains("PRETTY_NAME") {
+            let mut name = get_special(l, '=', 1);
+            name.retain(|c| c != '"');
+            return Ok(name);
         }
     }
 

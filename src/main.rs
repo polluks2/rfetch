@@ -214,7 +214,7 @@ impl Rfetch {
 
     fn print_distro(&self) {
         if let Some(d) = &self.user.distro {
-            println!("Distro:\t\t{} {}", d, self.uname.sysname)
+            println!("Distro:\t\t{}", d)
         }
     }
 }
