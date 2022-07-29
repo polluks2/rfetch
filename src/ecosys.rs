@@ -23,7 +23,7 @@ pub struct Ecos {
 }
 
 impl Ecos {
-    /// Collects all information, unavailable infromation is `None`
+    /// Collects all information, unavailable information is `None`
     pub fn new() -> Self {
         Self {
             name: Self::getuser(),

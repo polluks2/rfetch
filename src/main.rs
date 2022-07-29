@@ -51,7 +51,7 @@ impl Rfetch {
     }
 
     /// This is effectively the main function.
-    /// This will parse the arguments and executes what the user requets.
+    /// This will parse the arguments and executes what the user requests.
     pub fn run(self, args: Args) -> Result<()> {
         // If there are no arguments, print default and exit.
         if args.len() == 1 {
